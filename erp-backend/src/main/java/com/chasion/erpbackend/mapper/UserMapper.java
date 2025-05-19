@@ -11,4 +11,10 @@ public interface UserMapper {
     User findUserByUserName(String userName);
 
     int insertUser(User user);
+
+    @Select("select position from user where id = {id}")
+    String getPositionById(int id);
+
+    @Select("select * from user where id = #{id}")
+    User getUserById(Long id);
 }

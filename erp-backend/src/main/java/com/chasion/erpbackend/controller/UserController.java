@@ -5,15 +5,21 @@ import com.chasion.erpbackend.exception.BusinessException;
 import com.chasion.erpbackend.resp.Result;
 import com.chasion.erpbackend.resp.ResultCode;
 import com.chasion.erpbackend.service.UserService;
+import com.chasion.erpbackend.utils.JwtUtil;
 import com.chasion.erpbackend.utils.MailClient;
 import com.chasion.erpbackend.utils.MyUtils;
 import com.chasion.erpbackend.utils.RedisKeyUtils;
 import com.google.code.kaptcha.Producer;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -157,7 +163,7 @@ public class UserController {
 
     // 登录方法
     @PostMapping("/login")
-    public Result login(@RequestBody HashMap<String, Object> map) {
+    public Result login(@RequestBody HashMap<String, Object> map, HttpServletResponse response) {
         // 验证参数
         String username = map.get("username").toString();
         String password = map.get("password").toString();
@@ -170,6 +176,59 @@ public class UserController {
             throw new BusinessException(400, "用户名或密码错误");
         }
         userService.login(username, password);
+        // 生成双token
+        String accessToken = JwtUtil.generateAccessToken(byUsername);
+        String refreshToken = JwtUtil.generateRefreshToken(byUsername);
+
+        // 将refresh token 存入redis中
+        String refreshKey = RedisKeyUtils.getPrefixRefreshTokenKey(byUsername.getId());
+        redisTemplate.opsForValue().set(refreshKey, refreshToken, 7, TimeUnit.DAYS);
+
+        // 6. 返回结果（AccessToken通过响应头返回，RefreshToken通过Cookie返回）
+        response.setHeader("Authorization", "Bearer " + accessToken);
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(cookie);
+
         return Result.success("登录成功");
     }
+
+    // 双重token 更新
+    @PostMapping("/refresh/token")
+    public Result refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        // 1、从cookie中获取refresh token
+        Cookie[] cookies = request.getCookies();
+        String refreshToken = null;
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("refreshToken")) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        if (refreshToken == null) {
+            throw new BusinessException(401, "未提供刷新令牌");
+        }
+
+        // 2、验证refresh token
+        Claims claims = JwtUtil.parseToken(refreshToken);
+        Long userId = Long.parseLong(claims.getSubject());
+        User user = userService.findById(userId);
+
+        // 3、检查redis中refresh token是否存在
+        String refreshTokenKey = RedisKeyUtils.getPrefixRefreshTokenKey(userId);
+        String storedToken = (String) redisTemplate.opsForValue().get(refreshTokenKey);
+        if (!refreshToken.equals(storedToken)) {
+            throw new BusinessException(401, "刷新令牌无效");
+        }
+        // 4、生成新的access token
+        String accessToken = JwtUtil.generateAccessToken(user);
+        response.setHeader("Authorization", "Bearer " + accessToken);
+        return Result.success("令牌刷新成功");
+    }
+
 }

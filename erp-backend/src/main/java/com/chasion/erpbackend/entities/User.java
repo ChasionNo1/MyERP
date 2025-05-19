@@ -20,7 +20,7 @@ public class User {
 
 
     private String leaderFlag = "0";
-
+// 职务
     private String position;
 
     private String department;

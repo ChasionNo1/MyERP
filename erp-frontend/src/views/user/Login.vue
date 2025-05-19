@@ -166,10 +166,18 @@ const handleSubmit = async () => {
     )
     // 校验成功
     const res = await postAction('/user/login', values)
+    console.log(res)
     if (res.code === 200) {
       // console.log(res.message)
       // 登录成功
       message.success(res.message || '恭喜你，登录成功')
+      // 从响应头获取 Token（如 Authorization: Bearer xxx）
+      const authHeader = res.headers.get('Authorization');
+      const token = authHeader && authHeader.split(' ')[1]; // 提取 Bearer 后的 Token
+  
+  if (token) {
+    localStorage.setItem('accessToken', token); // 存储 Token
+  }
       // 跳转到首页
       router.push('/')
     } else {

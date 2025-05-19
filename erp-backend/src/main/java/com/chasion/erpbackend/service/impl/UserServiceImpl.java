@@ -22,6 +22,11 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
+    public User findById(Long id) {
+        return userMapper.getUserById(id);
+    }
+
     // 注册方法
     @Override
     public void register(String username, String password, String email) {
@@ -44,5 +49,10 @@ public class UserServiceImpl implements UserService {
         if (!user.getPassword().equals(MyUtils.Md5(password + user.getSalt()))) {
             throw new BusinessException(400, "用户名或密码错误");
         }
+    }
+
+    @Override
+    public String getPositionById(int id) {
+        return userMapper.getPositionById(id);
     }
 }
