@@ -1,22 +1,26 @@
 package com.chasion.erpbackend.controller;
 
+import com.chasion.erpbackend.entities.User;
 import com.chasion.erpbackend.exception.BusinessException;
 import com.chasion.erpbackend.resp.Result;
 import com.chasion.erpbackend.resp.ResultCode;
+import com.chasion.erpbackend.service.UserService;
 import com.chasion.erpbackend.utils.MailClient;
 import com.chasion.erpbackend.utils.MyUtils;
 import com.chasion.erpbackend.utils.RedisKeyUtils;
+import com.google.code.kaptcha.Producer;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.web.bind.annotation.*;
 
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 public class UserController {
 
     @Autowired
@@ -25,12 +29,15 @@ public class UserController {
     @Autowired
     private MailClient mailClient;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private Producer captchaProducer;
 
     // 响应邮箱验证码的请求
     @GetMapping("/verify/code")
     public Result getVerifyCode(@RequestParam String email) {
-        // 先生成验证码
-        String code = MyUtils.generateVerifyCode();
         // 防刷策略: 60s内不能重复发送
         String lockKey = RedisKeyUtils.getPrefixVerifyCodeLock(email);
         if (redisTemplate.hasKey(lockKey)) {
@@ -38,6 +45,8 @@ public class UserController {
         }
         // 设置锁定标记（60秒自动过期）
         redisTemplate.opsForValue().set(lockKey, "1", 60, TimeUnit.SECONDS);
+        // 生成验证码
+        String code = MyUtils.generateVerifyCode();
         // 存入redis
         String key = RedisKeyUtils.getPrefixVerifyCode(email);
         redisTemplate.opsForValue().set(
@@ -62,7 +71,93 @@ public class UserController {
     }
 
     // 响应注册请求
+    @PostMapping("/register")
+    public Result register(@RequestBody HashMap<String, Object> map) {
+        // 请求体里有一部分数据了
+        String username = map.get("username").toString();
+        String password = map.get("password").toString();
+        String rePassword = map.get("rePassword").toString();
+        String email = map.get("email").toString();
+        String code = map.get("verifyCode").toString();
+        if (username == null || password == null || email == null || code == null) {
+            throw new BusinessException(403, "请求参数有误");
+        }
+        // 检查验证码
+        String key = RedisKeyUtils.getPrefixVerifyCode(email);
+        if (redisTemplate.hasKey(key)) {
+            String saveCode = (String) redisTemplate.opsForValue().get(key);
+            if (!saveCode.toLowerCase().equals(code.toLowerCase())) {
+                throw new BusinessException(400, "验证码有误");
+            }else {
+                // 查询这个用户是否注册过
+                User byUsername = userService.findByUsername(username);
+                if (byUsername != null) {
+                    throw new BusinessException(400, "注册用户已存在");
+                }
+                if (!password.equals(rePassword)) {
+                    throw new BusinessException(400, "两次输入密码不一致");
+                }
+                // 注册逻辑
+                userService.register(username, password, email);
+            }
+        }else {
+            throw new BusinessException(400, "验证码已过期");
+        }
+        return Result.success("注册成功");
+    }
 
+    // 响应验证码
+    @GetMapping("/verify/image")
+    public Result<HashMap<String, Object>> getCaptcha(HttpServletRequest request) {
+        // 防刷策略
+        // 根据ip地址来，限制在一段时间内多次点击
+        String ip = request.getRemoteAddr();
+        String lockKey = RedisKeyUtils.getPrefixVerifyImageLock(ip); // 获取IP对应的Redis键
+        long now = System.currentTimeMillis(); // 当前时间（毫秒）
+        long oneMinuteAgo = now - 60 * 1000; // 1分钟前的时间（毫秒）
+        int maxRequests = 20; // 最大请求次数
 
+        // 使用有序集合（ZSET）记录请求时间戳
+        ZSetOperations<String, Object> zSetOps = redisTemplate.opsForZSet();
 
+        // 1. 添加当前请求时间到ZSET
+        zSetOps.add(lockKey, now, now); // score和value均为时间戳，方便范围查询
+
+        // 2. 移除1分钟前的请求记录
+        zSetOps.removeRangeByScore(lockKey, 0, oneMinuteAgo);
+
+        // 3. 获取当前有效请求次数
+        Long count = zSetOps.size(lockKey);
+
+        // 4. 检查是否超过限制
+        if (count != null && count > maxRequests) {
+            throw new BusinessException(500, "每分钟最多请求" + maxRequests + "次，请稍后再试");
+        }
+
+        // 5. 设置键过期时间（避免内存泄漏）
+        redisTemplate.expire(lockKey, 60, TimeUnit.SECONDS);
+
+        String text = captchaProducer.createText();
+        BufferedImage image = captchaProducer.createImage(text);
+        String base64Image = MyUtils.imageToBase64(image);
+        String uuid = MyUtils.generateCompactUuid(8);
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("base64Image", base64Image);
+        map.put("uuid", uuid);
+        redisTemplate.opsForValue().set(
+                uuid,
+                text,
+                5,
+                TimeUnit.MINUTES
+        );
+
+        return Result.success("获取成功", map);
+
+    }
+
+    // 登录方法
+    @PostMapping("/login")
+    public Result login(@RequestBody HashMap<String, Object> map) {
+        return Result.success("登录成功");
+    }
 }

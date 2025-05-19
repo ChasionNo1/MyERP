@@ -1,8 +1,8 @@
 -- ----------------------------
 -- Table structure for jsh_user
 -- ----------------------------
-DROP TABLE IF EXISTS `jsh_user`;
-CREATE TABLE `jsh_user` (
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
                             `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
                             `username` varchar(255) NOT NULL COMMENT '用户姓名--例如张三',
                             `salt` varchar(255) NOT NULL COMMENT '密码加盐',
@@ -29,7 +29,7 @@ CREATE TABLE `jsh_user` (
 -- ----------------------------
 -- Records of jsh_user
 -- ----------------------------
-INSERT INTO `jsh_user`
+INSERT INTO `user`
 (`username`, `salt`, `password`, `leader_flag`, `position`, `department`, `email`, `phonenum`, `avatar`, `ismanager`, `isystem`, `status`, `description`, `remark`, `weixin_open_id`, `tenant_id`, `delete_flag`, `update_time`, `create_time`)
 VALUES
     ('张三', 'abc123', 'e10adc3949ba59abbe56e057f20f883e', '0', '软件工程师', '技术部', 'zhangsan@example.com', '13800138000', '/avatar/zhangsan.png', 1, 0, 0, '专注于后端开发', '优秀员工', 'wx123456', 1, '0', '2023-05-18', '2023-05-18'),

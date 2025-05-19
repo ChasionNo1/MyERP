@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chasion.erpbackend.mapper.UserMapper">
+
+    <!-- 定义插入字段的SQL片段（修复末尾逗号问题） -->
+    <sql id="insertFields">
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            username,
+            <if test="salt != null">salt,</if>
+            <if test="password != null">password,</if>
+            <if test="leaderFlag != null">leader_flag,</if>
+            <if test="position != null">position,</if>
+            <if test="department != null">department,</if>
+            <if test="email != null">email,</if>
+            <if test="phonenum != null">phonenum,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="ismanager != null">ismanager,</if>
+            <if test="isystem != null">isystem,</if>
+            <if test="status != null">status,</if>
+            <if test="description != null">description,</if>
+            <if test="remark != null">remark,</if>
+            <if test="weixinOpenId != null">weixin_open_id,</if>
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="deleteFlag != null">delete_flag,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="createTime != null">create_time</if>
+        </trim>
+    </sql>
+
+    <!-- 定义插入值的SQL片段（修复末尾逗号问题） -->
+    <sql id="insertValues">
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{username},
+            <if test="salt != null">#{salt},</if>
+            <if test="password != null">#{password},</if>
+            <if test="leaderFlag != null">#{leaderFlag},</if>
+            <if test="position != null">#{position},</if>
+            <if test="department != null">#{department},</if>
+            <if test="email != null">#{email},</if>
+            <if test="phonenum != null">#{phonenum},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="ismanager != null">#{ismanager},</if>
+            <if test="isystem != null">#{isystem},</if>
+            <if test="status != null">#{status},</if>
+            <if test="description != null">#{description},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="weixinOpenId != null">#{weixinOpenId},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="deleteFlag != null">#{deleteFlag},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="createTime != null">#{createTime}</if>
+        </trim>
+    </sql>
+
+    <!-- 动态插入用户的SQL语句 -->
+    <insert id="insertUser"
+            parameterType="com.chasion.erpbackend.entities.User"
+    useGeneratedKeys="true"
+    keyProperty="id">
+    INSERT INTO user
+    <include refid="insertFields"/>
+    VALUES
+    <include refid="insertValues"/>
+</insert>
+</mapper>

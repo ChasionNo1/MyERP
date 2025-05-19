@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
-import { getAction } from "@/api/manage";
+import { getAction, postAction } from "@/api/manage";
 // 获取路由实例
 const router = useRouter();
 const registerForm = ref();
@@ -95,7 +95,7 @@ const validateVerifyCode = (rule, value, callback) => {
   }
 
   // 长度校验
-  if (value.length !== 4) {
+  if (value.length !== 6) {
     callback(new Error("验证码长度应为6位"));
     return;
   }
@@ -199,6 +199,28 @@ const handleSendVerifyCode = async() => {
     console.error('验证码发送失败:' + error)
   }
 }
+
+// 注册方法
+// 点击注册按钮，提交表单信息，发送请求
+const handleRegister = async () => {
+  try{
+    // 校验表单
+    const values = await registerForm.value.validateFields(
+      ['username', 'password', 'rePassword', 'email', 'verifyCode'], {force: true}
+    )
+    // 验证通过
+    // console.log(values)
+    const res = await postAction('/user/register', values)
+    if (res.code === 200) {
+      message.success('注册成功，即将跳转到登录页面')
+      router.push('/user/login')
+    }else {
+      message.error(res.message || '注册失败')
+    }
+  }catch (error) {
+    console.error('注册失败:' + error)
+  }
+}
 </script>
 
 <template>
@@ -286,6 +308,7 @@ const handleSendVerifyCode = async() => {
             size="large"
             html-type="submit"
             class="register-form-btn"
+            @click="handleRegister"
           >
             注册
           </a-button>

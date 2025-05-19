@@ -20,9 +20,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        pathRewrite: {
-          '^/api': ''
-        }
+        // 这样设置才有效果
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }

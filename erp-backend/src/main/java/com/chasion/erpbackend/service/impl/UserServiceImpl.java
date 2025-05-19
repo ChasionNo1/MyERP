@@ -3,8 +3,11 @@ package com.chasion.erpbackend.service.impl;
 import com.chasion.erpbackend.entities.User;
 import com.chasion.erpbackend.mapper.UserMapper;
 import com.chasion.erpbackend.service.UserService;
+import com.chasion.erpbackend.utils.MyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -21,6 +24,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public void register(String username, String password, String email) {
         User user = new User();
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setEmail(email);
+        user.setSalt(MyUtils.getSalt(6));
+        user.setAvatar("/images/user.png");
+        user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
         userMapper.insertUser(user);
     }
 
