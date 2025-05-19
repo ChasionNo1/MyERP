@@ -158,6 +158,18 @@ public class UserController {
     // 登录方法
     @PostMapping("/login")
     public Result login(@RequestBody HashMap<String, Object> map) {
+        // 验证参数
+        String username = map.get("username").toString();
+        String password = map.get("password").toString();
+        String code = map.get("verifyCode").toString();
+        if (username == null || password == null || code == null) {
+            throw new BusinessException(403, "用户名或密码错误");
+        }
+        User byUsername = userService.findByUsername(username);
+        if (byUsername == null) {
+            throw new BusinessException(400, "用户名或密码错误");
+        }
+        userService.login(username, password);
         return Result.success("登录成功");
     }
 }

@@ -1,5 +1,8 @@
 package com.chasion.erpbackend.utils;
 
+import io.micrometer.common.util.StringUtils;
+import org.springframework.util.DigestUtils;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -49,5 +52,13 @@ public class MyUtils {
     // 生成uuid
     public static String generateCompactUuid(int length) {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, length);
+    }
+
+    // md5加密
+    public static String Md5(String key){
+        if (StringUtils.isBlank(key)){
+            return null;
+        }
+        return DigestUtils.md5DigestAsHex(key.getBytes());
     }
 }
