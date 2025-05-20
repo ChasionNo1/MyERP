@@ -6,6 +6,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
@@ -56,5 +57,22 @@ public class JwtUtil {
     // 验证Token是否过期
     public static boolean isTokenExpired(String token) {
         return parseToken(token).getExpiration().before(new Date());
+    }
+
+    // 从请求头中提取Token（支持多种格式）
+    public static String extractTokenFromHeader(HttpServletRequest request) {
+        // 优先从标准Authorization头获取（Bearer格式）
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        // 备选：从自定义头获取（根据实际需求调整）
+        String customHeader = request.getHeader("X-Access-Token");
+        if (customHeader != null && !customHeader.isEmpty()) {
+            return customHeader;
+        }
+
+        return null;
     }
 }

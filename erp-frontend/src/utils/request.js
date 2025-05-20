@@ -1,7 +1,7 @@
 // 封装请求
 import axios from "axios";
 import {notification } from "ant-design-vue";
-
+import { useAuthStore } from "@/stores/auth";
 
 /**
  * 指定 axios 的 baseURL
@@ -10,6 +10,7 @@ import {notification } from "ant-design-vue";
 let apiBaseUrl = '/api'
 // 确保 CORS 配置允许 credentials：
 axios.defaults.withCredentials = true
+const authStore = useAuthStore()
 
 // 创建 axios 实例
 const service = axios.create({
@@ -97,7 +98,9 @@ const err = async (error) => {
 
 // 请求拦截器
 axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken');
+  const token = authStore.token
+  console.log("token", token)
+  
   if (token) {
     // 格式为 Bearer <token>，注意空格
     config.headers.Authorization = `Bearer ${token}`; 
@@ -106,6 +109,7 @@ axios.interceptors.request.use(config => {
 }, error => {
   return Promise.reject(error);
 });
+
 // 响应拦截器
 service.interceptors.response.use((response) => {
   return response.data;

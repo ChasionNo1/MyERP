@@ -1,5 +1,5 @@
 import UserLayout from '@/components/layouts/UserLayout.vue'
-
+import IndexPage from '@/views/IndexPage.vue'
 
 // 基础路由
 export const constantRouterMap = [
@@ -21,5 +21,9 @@ export const constantRouterMap = [
             }
         ]
 
+    },
+    {
+        path: '/',
+        component: IndexPage
     }
 ]

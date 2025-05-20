@@ -142,12 +142,22 @@ public class UserController {
 
         // 5. 设置键过期时间（避免内存泄漏）
         redisTemplate.expire(lockKey, 60, TimeUnit.SECONDS);
-
         String text = captchaProducer.createText();
         BufferedImage image = captchaProducer.createImage(text);
         String base64Image = MyUtils.imageToBase64(image);
         String uuid = MyUtils.generateCompactUuid(8);
+
+        //将验证码存入redis中
+        String key = RedisKeyUtils.getPrefixVerifyImageKey(uuid);
+        redisTemplate.opsForValue().set(
+                key,
+                text,
+                5,
+                TimeUnit.MINUTES
+        );
+
         HashMap<String, Object> map = new HashMap<>();
+        // 返回给前端的uuid，在登陆时携带过来
         map.put("base64Image", base64Image);
         map.put("uuid", uuid);
         redisTemplate.opsForValue().set(
@@ -163,17 +173,27 @@ public class UserController {
 
     // 登录方法
     @PostMapping("/login")
-    public Result login(@RequestBody HashMap<String, Object> map, HttpServletResponse response) {
+    public Result<String> login(@RequestBody HashMap<String, Object> map, HttpServletResponse response) {
         // 验证参数
         String username = map.get("username").toString();
         String password = map.get("password").toString();
         String code = map.get("verifyCode").toString();
-        if (username == null || password == null || code == null) {
+        String uuid = map.get("uuid").toString();
+        if (username == null || password == null || code == null || uuid == null) {
             throw new BusinessException(403, "用户名或密码错误");
         }
         User byUsername = userService.findByUsername(username);
         if (byUsername == null) {
             throw new BusinessException(400, "用户名或密码错误");
+        }
+        // 从redis里读取验证码
+        String key = RedisKeyUtils.getPrefixVerifyImageKey(uuid);
+        if (!redisTemplate.hasKey(key)) {
+            throw new BusinessException(400, "验证码错误");
+        }
+        String saveCode = (String) redisTemplate.opsForValue().get(key);
+        if (!saveCode.toLowerCase().equals(code.toLowerCase())) {
+            throw new BusinessException(400, "验证码错误");
         }
         userService.login(username, password);
         // 生成双token
@@ -185,7 +205,7 @@ public class UserController {
         redisTemplate.opsForValue().set(refreshKey, refreshToken, 7, TimeUnit.DAYS);
 
         // 6. 返回结果（AccessToken通过响应头返回，RefreshToken通过Cookie返回）
-        response.setHeader("Authorization", "Bearer " + accessToken);
+//        response.setHeader("Authorization", "Bearer " + accessToken);
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
@@ -193,7 +213,7 @@ public class UserController {
         cookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(cookie);
 
-        return Result.success("登录成功");
+        return Result.success("登录成功", accessToken);
     }
 
     // 双重token 更新

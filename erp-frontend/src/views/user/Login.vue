@@ -4,11 +4,14 @@ import { message } from 'ant-design-vue';
 import { getAction, postAction } from '@/api/manage';
 import { useRouter } from 'vue-router'
 import { computed, ref } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+
 defineOptions({
   name: 'LoginPage'
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loginForm = ref()
 const formState = ref({
   username: '',
@@ -137,7 +140,7 @@ const rules = {
 // 页面加载验证码
 const handleChangeCheckCode = () => {
   // 调用接口获取验证码信息
-  getAction('/user/verify/image').then(res => {
+  getAction('/user/verify/image', {uuid: uuid.value}).then(res => {
     if (res.code === 200) {
       // 请求成功开始赋值
       uuid.value = res.data.uuid
@@ -172,11 +175,14 @@ const handleSubmit = async () => {
       // 登录成功
       message.success(res.message || '恭喜你，登录成功')
       // 从响应头获取 Token（如 Authorization: Bearer xxx）
-      const authHeader = res.headers.get('Authorization');
-      const token = authHeader && authHeader.split(' ')[1]; // 提取 Bearer 后的 Token
+      // const authHeader = res.headers.get('Authorization');
+      // const token = authHeader && authHeader.split(' ')[1]; // 提取 Bearer 后的 Token
+      const token = res.data
   
   if (token) {
-    localStorage.setItem('accessToken', token); // 存储 Token
+    // localStorage.setItem('accessToken', token); // 存储 Token
+    // 存放到pinia中
+    authStore.setToken(token)
   }
       // 跳转到首页
       router.push('/')
