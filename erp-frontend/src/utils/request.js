@@ -1,27 +1,21 @@
 // 封装请求
 import axios from "axios";
-import {notification } from "ant-design-vue";
+import { notification } from "ant-design-vue";
 import { useAuthStore } from "@/stores/auth";
 
 /**
  * 指定 axios 的 baseURL
  */
 // let apiBaseUrl = window._CONFIG["domainURL"] || "/";
-let apiBaseUrl = '/api'
+// let apiBaseUrl = "/api";
 // 确保 CORS 配置允许 credentials：
-axios.defaults.withCredentials = true
-const authStore = useAuthStore()
-
-// 创建 axios 实例
-const service = axios.create({
-  baseURL: apiBaseUrl,
-  timeout: 300000,
-});
+// axios.defaults.withCredentials = true
+// ✅ 直接创建实例，无需等待插件安装
 
 const err = async (error) => {
   if (error.response) {
     let message = error.response.message;
-    const originalRequest = error.config
+    const originalRequest = error.config;
     // 判断错误类型，根据响应码
     switch (error.response.status) {
       case 403:
@@ -67,20 +61,23 @@ const err = async (error) => {
         // }
 
         // 401的处理，先进行access token刷新
-        if (message === '访问令牌已过期，请刷新' && !originalRequest._retry) {
+        if (message === "访问令牌已过期，请刷新" && !originalRequest._retry) {
           try {
-            originalRequest._retry = true
+            originalRequest._retry = true;
             // 刷新access token
-            await axios.post('/refresh/token', {}, {withCredentials: true})
+            await axios.post("/refresh/token", {}, { withCredentials: true });
             // 重试原请求
-            return service(originalRequest)
-          }catch (refreshError) {
-            window.location.href = '/login'
-            return Promise.reject(refreshError)
+            return service(originalRequest);
+          } catch (refreshError) {
+            window.location.href = "/login";
+            return Promise.reject(refreshError);
           }
-        }else if ((message === '刷新令牌无效' || message == '未提供刷新令牌') && !originalRequest._retry) {
-            // 这里就直接重新登录了
-            window.location.href = '/login'
+        } else if (
+          (message === "刷新令牌无效" || message == "未提供刷新令牌") &&
+          !originalRequest._retry
+        ) {
+          // 这里就直接重新登录了
+          window.location.href = "/login";
         }
         break;
       default:
@@ -96,34 +93,37 @@ const err = async (error) => {
   return Promise.reject(error);
 };
 
-// 请求拦截器
-axios.interceptors.request.use(config => {
-  const token = authStore.token
-  console.log("token", token)
-  
-  if (token) {
-    // 格式为 Bearer <token>，注意空格
-    config.headers.Authorization = `Bearer ${token}`; 
-  }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
+let service = null;
 
-// 响应拦截器
-service.interceptors.response.use((response) => {
-  return response.data;
-}, err);
-
-// 安装插件
 const VueAxios = {
   install(app) {
+    service = axios.create({
+      baseURL: '/api',
+      timeout: 300000,
+      withCredentials: true
+    });
+
+    // 请求拦截器
+    service.interceptors.request.use(config => {
+      const authStore = useAuthStore();
+      const token = authStore.accessToken;
+      console.log("Interceptor Token:", token);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    }, error => Promise.reject(error));
+
+    // 响应拦截器
+    service.interceptors.response.use(
+      response => response.data,
+      err
+    );
+
+    // 挂载到全局属性
     app.config.globalProperties.$axios = service;
     app.config.globalProperties.$http = service;
-  },
+  }
 };
 
-export {
-    VueAxios,
-    service as axios
-}
+export { VueAxios };

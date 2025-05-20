@@ -1,6 +1,5 @@
 // 统一封装各种请求
-import {axios} from '@/utils/request'
-
+import { getCurrentInstance } from 'vue'
 // 定义各种接口的访问路径
 const api = {
   user: '/api/user',
@@ -14,9 +13,11 @@ const api = {
 export default api
 
 
+
 // post请求
 export const postAction = (url, parameter) => {
-    return axios({
+    const { proxy } = getCurrentInstance();
+    return proxy.$axios({
         url: url,
         method: 'post',
         data: parameter
@@ -25,7 +26,8 @@ export const postAction = (url, parameter) => {
 
 // get请求
 export const getAction = (url, parameter) => {
-    return axios({
+    const { proxy } = getCurrentInstance();
+    return proxy.$axios({
         url: url,
         method: 'get',
         params: parameter

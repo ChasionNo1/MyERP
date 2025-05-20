@@ -251,4 +251,9 @@ public class UserController {
         return Result.success("令牌刷新成功");
     }
 
+    @GetMapping("/test")
+    public Result test(){
+        return Result.success("测试成功");
+    }
+
 }

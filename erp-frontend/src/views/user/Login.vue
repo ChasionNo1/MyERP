@@ -168,7 +168,14 @@ const handleSubmit = async () => {
       ['username', 'password', 'verifyCode'], { force: true }
     )
     // 校验成功
-    const res = await postAction('/user/login', values)
+    // 还要传入一个uuid
+    let params = {
+      username: values.username,
+      password: values.password,
+      uuid: uuid.value,
+      verifyCode: values.verifyCode
+    }
+    const res = await postAction('/user/login', params)
     console.log(res)
     if (res.code === 200) {
       // console.log(res.message)
