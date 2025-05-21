@@ -22,18 +22,6 @@ const err = async (error) => {
         notification.error({ message: "系统提示", description: "拒绝访问", duration: 4 });
         break;
       case 500:
-        // if (token && message === "loginOut") {
-        //   Modal.error({
-        //     title: "登录已过期",
-        //     content: "很抱歉，登录已过期，请重新登录",
-        //     okText: "重新登录",
-        //     mask: false,
-        //     onOk: () => {
-        //       localStorage.removeItem(ACCESS_TOKEN); // 使用原生 API 替代 Vue.ls
-        //       window.location.reload();
-        //     },
-        //   });
-        // }
         notification.error({ message: "系统提示", description: "服务器异常", duration: 4 });
         break;
       case 404:
@@ -47,21 +35,8 @@ const err = async (error) => {
         notification.error({ message: "系统提示", description: "网络超时" });
         break;
       case 401:
-        // notification.error({ message: "系统提示", description: "未授权，请重新登录", duration: 4 });
-        // if (token) {
-        //   // 这里的store是状态管理库，通过store.dispatch调用名为Logout的方法，
-        //   // dispatch一般用于触发状态管理库中的某个动作。then方法会在Logout动作成功执行后被调用，
-        //   // 在then的回调函数中，使用setTimeout设置一个 1500 毫秒（1.5 秒）的延迟，
-        //   // 延迟结束后，通过window.location.reload()重新加载当前页面。
-        //   userStore.dispatch("Logout").then(() => {
-        //     setTimeout(() => {
-        //       window.location.reload();
-        //     }, 1500);
-        //   });
-        // }
-
         // 401的处理，先进行access token刷新
-        if (message === "访问令牌已过期，请刷新" && !originalRequest._retry) {
+        if (message === "缺少token" && !originalRequest._retry) {
           try {
             originalRequest._retry = true;
             // 刷新access token
@@ -97,6 +72,8 @@ let service = null;
 
 const VueAxios = {
   install(app) {
+    // 在插件安装时获取 authStore，确保在 Vue 上下文内
+    const authStore = useAuthStore();
     service = axios.create({
       baseURL: '/api',
       timeout: 300000,
@@ -105,7 +82,6 @@ const VueAxios = {
 
     // 请求拦截器
     service.interceptors.request.use(config => {
-      const authStore = useAuthStore();
       const token = authStore.accessToken;
       console.log("Interceptor Token:", token);
       if (token) {
@@ -126,4 +102,4 @@ const VueAxios = {
   }
 };
 
-export { VueAxios };
+export { VueAxios, service };

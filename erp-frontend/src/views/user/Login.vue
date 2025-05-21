@@ -176,7 +176,6 @@ const handleSubmit = async () => {
       verifyCode: values.verifyCode
     }
     const res = await postAction('/user/login', params)
-    console.log(res)
     if (res.code === 200) {
       // console.log(res.message)
       // 登录成功
@@ -185,14 +184,14 @@ const handleSubmit = async () => {
       // const authHeader = res.headers.get('Authorization');
       // const token = authHeader && authHeader.split(' ')[1]; // 提取 Bearer 后的 Token
       const token = res.data
-  
-  if (token) {
-    // localStorage.setItem('accessToken', token); // 存储 Token
-    // 存放到pinia中
-    authStore.setToken(token)
-  }
       // 跳转到首页
       router.push('/')
+  
+      if (token) {
+        // localStorage.setItem('accessToken', token); // 存储 Token
+        // 存放到pinia中
+        authStore.setToken(token)
+      }  
     } else {
       message.error(res.message || '登录失败')
     }

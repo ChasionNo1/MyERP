@@ -15,3 +15,8 @@ npm install --save @ant-design/icons-vue
 安装axios
 
 npm install axios
+
+安装pinia持久化
+
+npm install pinia-plugin-persistedstate
+

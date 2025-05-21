@@ -1,5 +1,6 @@
 // 统一封装各种请求
-import { getCurrentInstance } from 'vue'
+import {service} from '@/utils/request'; // 从request.js导入service实例
+
 // 定义各种接口的访问路径
 const api = {
   user: '/api/user',
@@ -16,8 +17,7 @@ export default api
 
 // post请求
 export const postAction = (url, parameter) => {
-    const { proxy } = getCurrentInstance();
-    return proxy.$axios({
+    return service ({
         url: url,
         method: 'post',
         data: parameter
@@ -26,8 +26,7 @@ export const postAction = (url, parameter) => {
 
 // get请求
 export const getAction = (url, parameter) => {
-    const { proxy } = getCurrentInstance();
-    return proxy.$axios({
+    return service({
         url: url,
         method: 'get',
         params: parameter

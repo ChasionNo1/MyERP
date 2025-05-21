@@ -32,7 +32,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         // 3. 检查Token是否存在
         if (token == null) {
             setErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED,
-                    "未提供认证Token，请在请求头中添加Authorization字段");
+                    "缺少token");
             return false;
         }
         try {
@@ -44,12 +44,12 @@ public class JwtInterceptor implements HandlerInterceptor {
         }catch (SignatureException | MalformedJwtException e) {
             // 8. 不支持的Token类型
             setErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
-                    "不支持的Token类型，请使用有效的JWT格式");
+                    "不支持的Token类型");
             return false;
         }catch (IllegalArgumentException e) {
             // 9. 参数错误（如Token为空）
             setErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
-                    "Token参数异常，请确保Token非空且格式正确");
+                    "Token参数异常");
             return false;
         }
     }
