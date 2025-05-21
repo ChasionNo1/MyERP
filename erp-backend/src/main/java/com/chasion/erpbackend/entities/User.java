@@ -1,5 +1,6 @@
 package com.chasion.erpbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -12,10 +13,10 @@ public class User {
 
     private String username;
 
-
+    @JsonIgnore
     private String salt;
 
-
+    @JsonIgnore
     private String password;
 
 

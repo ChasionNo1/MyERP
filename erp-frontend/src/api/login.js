@@ -1,5 +1,5 @@
 // 登录接口
-import {axios} from '@/utils/request'
+import {service} from '@/utils/request'; // 从request.js导入service实例
 
 /**
  * login func
@@ -14,7 +14,7 @@ import {axios} from '@/utils/request'
  */
 
 export const login = (parameter) => {
-    return axios({
+    return service({
         url: '/user/login',
         method: 'post',
         data: parameter
@@ -22,7 +22,7 @@ export const login = (parameter) => {
 }
 
 export const logout = () => {
-    return axios({
+    return service({
         url: '/user/logout',
         method: 'get'
     })
