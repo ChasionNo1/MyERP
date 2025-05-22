@@ -6,9 +6,8 @@ import { login } from "@/api/login"
 export const useUserStore = defineStore("user", {
   // 定义state
   state: () => ({
-    token: "",
+    userId: "",
     username: "",
-    realname: "",
     welcome: "",
     avatar: "",
     permissionList: [],
@@ -41,20 +40,23 @@ export const useUserStore = defineStore("user", {
   },
 
   // 登录
-  async login(params) {
+  async Login(params) {
     try {
       const response = await login(params);
       if (response.code === 200) {
-        if (response.data.msgTip === "user can login") {
+        // 这里得知用户登录成功后，先进行数据缓存
+        if (response.message === "登录成功") {
           const result = response.data;
           // 进行缓存操作
-          this.token = result.token;
+          this.userId = result.userId
+          this.username = result.username
+          this.info = result.user;
         }
-        this.info = params;
       }
       return response;
     } catch (error) {
       return { error };
     }
   },
-});
+  } 
+)

@@ -173,7 +173,7 @@ public class UserController {
 
     // 登录方法
     @PostMapping("/login")
-    public Result<String> login(@RequestBody HashMap<String, Object> map, HttpServletResponse response) {
+    public Result<HashMap<String, Object>> login(@RequestBody HashMap<String, Object> map, HttpServletResponse response) {
         // 验证参数
         String username = map.get("username").toString();
         String password = map.get("password").toString();
@@ -206,6 +206,12 @@ public class UserController {
 
         // 6. 返回结果（AccessToken通过响应头返回，RefreshToken通过Cookie返回）
 //        response.setHeader("Authorization", "Bearer " + accessToken);
+        HashMap<String, Object> data = new HashMap<>();
+        // 增加登录返回的结果
+        data.put("accessToken", accessToken);
+        data.put("userId", byUsername.getId());
+        data.put("username", byUsername.getUsername());
+        data.put("user", byUsername);
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
@@ -213,7 +219,7 @@ public class UserController {
         cookie.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(cookie);
 
-        return Result.success("登录成功", accessToken);
+        return Result.success("登录成功", data);
     }
 
     // 双重token 更新

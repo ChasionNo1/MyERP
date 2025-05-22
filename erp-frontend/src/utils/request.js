@@ -18,6 +18,11 @@ const err = async (error) => {
     const originalRequest = error.config;
     // 判断错误类型，根据响应码
     switch (error.response.status) {
+      case 400:
+        if (error.response.message === '验证码错误') {
+          return Promise.reject(error)
+        }
+        break;
       case 403:
         notification.error({ message: "系统提示", description: "拒绝访问", duration: 4 });
         break;

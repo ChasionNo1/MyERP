@@ -5,6 +5,7 @@ import { getAction, postAction } from '@/api/manage';
 import { useRouter } from 'vue-router'
 import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useUserStore} from '@/stores/user'
 
 defineOptions({
   name: 'LoginPage'
@@ -12,6 +13,7 @@ defineOptions({
 
 const router = useRouter()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const loginForm = ref()
 const formState = ref({
   username: '',
@@ -175,7 +177,9 @@ const handleSubmit = async () => {
       uuid: uuid.value,
       verifyCode: values.verifyCode
     }
-    const res = await postAction('/user/login', params)
+    // 这里也得异步，调用方法是异步，得等它返回结果
+    const res = await userStore.Login(params)
+    // console.log('login vue', res.data)
     if (res.code === 200) {
       // console.log(res.message)
       // 登录成功
@@ -183,7 +187,7 @@ const handleSubmit = async () => {
       // 从响应头获取 Token（如 Authorization: Bearer xxx）
       // const authHeader = res.headers.get('Authorization');
       // const token = authHeader && authHeader.split(' ')[1]; // 提取 Bearer 后的 Token
-      const token = res.data
+      const token = res.data.accessToken
       // 跳转到首页
       router.push('/')
   
@@ -192,7 +196,9 @@ const handleSubmit = async () => {
         // 存放到pinia中
         authStore.setToken(token)
       }  
-    } else {
+    } else if (message.error === '验证码错误'){
+      handleChangeCheckCode()
+    }else {
       message.error(res.message || '登录失败')
     }
   } catch (error) {
